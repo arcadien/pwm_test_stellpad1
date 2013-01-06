@@ -2,79 +2,85 @@
  * main.c
  */
 
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
+#include "inc/hw_memmap.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/interrupt.h"
 #include "driverlib/gpio.h"
 #include "driverlib/timer.h"
-#include "softPwm.h"
-
-// delay before a new PWM value is set
-// SysCtlDelay() loop is 3 clocks
-#define DELAY 2000000
+#include "driverlib/pin_map.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/sysctl.h"
 
 void main(void) {
+
+	unsigned long ulPeriod, DELAY;
+
+	DELAY = 1000000;
 
 	// 50Mhz off pll driven by ext 16mhz xtal
 	SysCtlClockSet(
 			SYSCTL_SYSDIV_2 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ
 					| SYSCTL_OSC_MAIN);
 
-	// activate blue LED gpio
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
 
-	// clear any existing state
-	GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
+	TimerConfigure(TIMER1_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PWM);
 
-	softPwmInit();
+	// Configure PF2 as T1CCP0, so blue led become PWM driven
+	GPIOPinConfigure(GPIO_PF2_T1CCP0);
+	GPIOPinTypeTimer(GPIO_PORTF_BASE, GPIO_PIN_2);
 
 	unsigned long base_freq = 500; // 500Hz
 
+	unsigned long ulP_ticksForFreq = (SysCtlClockGet() / base_freq);
+
+	TimerLoadSet(TIMER1_BASE, TIMER_A, ulP_ticksForFreq - 1);
+
+	TimerEnable(TIMER1_BASE, TIMER_A);
+
 	while (1) {
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 0);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 10);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod / 10) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 25);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 25 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 33);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 33 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 50);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 50 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 66);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 66 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 75);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 75 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 100);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 75);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 75 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 66);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 66 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 50);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 50 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 33);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 33 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 25);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod * 25 / 100) - 1);
 		SysCtlDelay(DELAY);
 
-		softPwmConfig(GPIO_PORTF_BASE, GPIO_PIN_2, base_freq, 10);
+		TimerMatchSet(TIMER1_BASE, TIMER_A, (ulPeriod / 10) - 1);
 		SysCtlDelay(DELAY);
 
 	}
